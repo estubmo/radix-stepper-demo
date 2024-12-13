@@ -39,24 +39,23 @@ const stepVariants = cva(
 );
 
 // Define connector line variants
-const connectorVariants = cva(
-  [
-    "absolute top-1/2 transform -translate-y-1/2",
-    "h-1 transition-colors duration-300",
-  ],
-  {
-    variants: {
-      status: {
-        default: "bg-gray-200",
-        completed: "bg-green-500",
-        active: "bg-blue-500",
-      },
+const connectorVariants = cva(["transition-colors duration-300"], {
+  variants: {
+    status: {
+      default: "bg-gray-200",
+      completed: "bg-green-500",
+      active: "bg-blue-500",
     },
-    defaultVariants: {
-      status: "default",
+    orientation: {
+      horizontal: ["absolute top-1/2 transform -translate-y-1/2", "h-1"],
+      vertical: ["absolute left-1/2 transform -translate-x-1/2", "w-1"],
     },
   },
-);
+  defaultVariants: {
+    status: "default",
+    orientation: "horizontal",
+  },
+});
 
 // Stepper Component
 interface StepperProps {
@@ -67,80 +66,115 @@ interface StepperProps {
   }[];
   activeStep?: number;
   onStepChange?: (step: number) => void;
+  orientation?: "horizontal" | "vertical";
 }
 
-export function Stepper({ steps, activeStep = 0, onStepChange }: StepperProps) {
+export function Stepper({
+  steps,
+  activeStep = 0,
+  onStepChange,
+  orientation = "horizontal",
+}: StepperProps) {
   return (
     <Tabs.Root
       defaultValue={steps[activeStep].label}
       value={steps[activeStep].label}
       className="w-full"
+      orientation={orientation}
     >
-      {/* Step Indicators */}
-      <Tabs.List className="relative flex items-center justify-between mb-8 w-min">
-        {steps.map((step, index) => (
-          <div
-            key={step.label}
-            className="relative flex-1 flex items-center min-w-20"
-          >
-            {/* Connector Line */}
-            {index > 0 && (
-              <div
-                className={twMerge(
-                  connectorVariants({
-                    status: index <= activeStep ? "completed" : "default",
-                    className: "left-0 right-1/2 -ml-1/2",
-                  }),
-                )}
-              />
-            )}
-
-            {/* Step Indicator */}
-            <Tabs.Trigger
-              onClick={() => onStepChange?.(index)}
-              value={step.label}
+      <div
+        className={twMerge(
+          orientation === "horizontal"
+            ? "flex flex-col w-full"
+            : "flex flex-row w-full",
+        )}
+      >
+        {/* Step Indicators */}
+        <Tabs.List
+          className={twMerge(
+            "relative",
+            orientation === "horizontal"
+              ? "flex items-center justify-between mb-8 w-min"
+              : "flex-col space-y-8 mr-8 h-full",
+          )}
+        >
+          {steps.map((step, index) => (
+            <div
+              key={step.label}
               className={twMerge(
-                stepVariants({
-                  status:
-                    index < activeStep
-                      ? "completed"
-                      : index === activeStep
-                        ? "active"
-                        : "default",
-                  size: "md",
-                }),
+                "relative flex-1",
+                orientation === "horizontal"
+                  ? "flex items-center min-w-20"
+                  : "flex flex-col items-center min-h-20",
               )}
             >
-              {index + 1}
-            </Tabs.Trigger>
+              {/* Connector Line */}
+              {index > 0 && index !== steps.length - 1 && (
+                <div
+                  className={twMerge(
+                    connectorVariants({
+                      status: index <= activeStep ? "completed" : "default",
+                      orientation,
+                      className:
+                        orientation === "horizontal"
+                          ? "left-0 right-1/2 -ml-1/2"
+                          : "top-0 bottom-1/2 -mt-1/2 h-full",
+                    }),
+                  )}
+                />
+              )}
 
-            {/* Connector Line */}
-            {index < steps.length - 1 && (
-              <div
+              {/* Step Indicator */}
+              <Tabs.Trigger
+                onClick={() => onStepChange?.(index)}
+                value={step.label}
                 className={twMerge(
-                  connectorVariants({
-                    status: index < activeStep ? "completed" : "default",
-                    className: "right-0 left-1/2 -mr-1/2",
+                  stepVariants({
+                    status:
+                      index < activeStep
+                        ? "completed"
+                        : index === activeStep
+                          ? "active"
+                          : "default",
+                    size: "md",
                   }),
                 )}
-              />
-            )}
-          </div>
-        ))}
-      </Tabs.List>
+              >
+                {index + 1}
+              </Tabs.Trigger>
 
-      {/* Step Content */}
-      {steps.map((step) => {
-        return (
-          <Tabs.Content
-            key={step.label}
-            value={step.label}
-            className="p-4 border border-white text-white rounded-lg shadow w-full"
-          >
-            {step.content}
-          </Tabs.Content>
-        );
-      })}
+              {/* Connector Line */}
+              {index < steps.length - 1 && (
+                <div
+                  className={twMerge(
+                    connectorVariants({
+                      status: index < activeStep ? "completed" : "default",
+                      orientation,
+                      className:
+                        orientation === "horizontal"
+                          ? "right-0 left-1/2 -mr-1/2"
+                          : "bottom-0 top-1/2 -mb-1/2 h-full",
+                    }),
+                  )}
+                />
+              )}
+            </div>
+          ))}
+        </Tabs.List>
+
+        {/* Step Content */}
+        {steps.map((step) => {
+          return (
+            <Tabs.Content
+              key={step.label}
+              value={step.label}
+              className="p-4 border border-white text-white rounded-lg shadow w-full"
+            >
+              {step.content}
+            </Tabs.Content>
+          );
+        })}
+      </div>
     </Tabs.Root>
   );
 }
